@@ -2,10 +2,10 @@ package com.example.mediasampleapp
 
 import android.media.MediaPlayer
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.View
+import android.widget.CompoundButton
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.example.mediasampleapp.databinding.ActivityMainBinding
 import java.io.IOException
@@ -36,7 +36,10 @@ class MainActivity : AppCompatActivity() {
             Log.d("メディアプレーヤー準備時の例外発生",ex.toString())
         }
 
+        binding.swLoop.setOnCheckedChangeListener(LoopSwitchChangedListener())
         onPlayButtonClick()
+        onBackButtonClick()
+        onForwardButtonClick()
     }
 
     private inner class PlayerPreparedListener : MediaPlayer.OnPreparedListener{
@@ -51,7 +54,17 @@ class MainActivity : AppCompatActivity() {
 
     private inner class PlayerCompletionListener : MediaPlayer.OnCompletionListener{
         override fun onCompletion(mp: MediaPlayer?) {
-            binding.btPlay.setText(R.string.bt_play_play)
+            player?.let {
+                if (!it.isLooping){
+                    binding.btPlay.setText(R.string.bt_play_play)
+                }
+            }
+        }
+    }
+
+    private inner class LoopSwitchChangedListener : CompoundButton.OnCheckedChangeListener{
+        override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+            player?.isLooping = isChecked
         }
     }
 
@@ -65,6 +78,21 @@ class MainActivity : AppCompatActivity() {
                     it.start()
                     binding.btPlay.setText(R.string.bt_play_pause)
                 }
+            }
+        }
+    }
+    fun onBackButtonClick(){
+        binding.btBack.setOnClickListener{
+            player?.seekTo(0)
+        }
+    }
+    fun onForwardButtonClick(){
+        binding.btForward.setOnClickListener{
+            player?.let {
+                val duration = it.duration
+                it.seekTo(duration)
+                if (!it.isPlaying)
+                    it.start()
             }
         }
     }
