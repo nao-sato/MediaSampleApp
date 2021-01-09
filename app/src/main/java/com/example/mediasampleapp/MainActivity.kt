@@ -19,14 +19,37 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding  = DataBindingUtil.setContentView(this,R.layout.activity_main)
         player = MediaPlayer()
-        val mediaFileUriStr = "android.resource://${packageName}/${R.raw.dust}"
-        val mediaFileUri: Uri = Uri.parse(mediaFileUriStr)
+        initialize()
+    }
 
+    private fun initialize(){
+        onPrepare()
+        onPlayButtonClick()
+        onBackButtonClick()
+        onForwardButtonClick()
+        onLoopSwitch()
+    }
+
+
+    private fun onPrepare(){
+        val mediaFileUri: Uri = Uri.parse("android.resource://${packageName}/${R.raw.sample_music}")
         try {
             player?.apply{
                 setDataSource(applicationContext,mediaFileUri)
-                setOnPreparedListener(PlayerPreparedListener())
-                setOnCompletionListener(PlayerCompletionListener())
+                setOnPreparedListener{
+                    binding.apply {
+                        btPlay.isEnabled = true
+                        btBack.isEnabled = true
+                        btForward.isEnabled = true
+                    }
+                }
+                setOnCompletionListener{
+                    player?.let {
+                        if (!it.isLooping){
+                            binding.btPlay.setText(R.string.bt_play_play)
+                        }
+                    }
+                }
                 prepareAsync()
             }
         }catch (ex: IllegalArgumentException){
@@ -35,45 +58,13 @@ class MainActivity : AppCompatActivity() {
         catch (ex: IOException){
             Log.d("メディアプレーヤー準備時の例外発生",ex.toString())
         }
-
-        binding.swLoop.setOnCheckedChangeListener(LoopSwitchChangedListener())
-        onPlayButtonClick()
-        onBackButtonClick()
-        onForwardButtonClick()
     }
-
-    private inner class PlayerPreparedListener : MediaPlayer.OnPreparedListener{
-        override fun onPrepared(mp: MediaPlayer?) {
-            binding.apply {
-                btPlay.isEnabled = true
-                btBack.isEnabled = true
-                btForward.isEnabled = true
-            }
-        }
-    }
-
-    private inner class PlayerCompletionListener : MediaPlayer.OnCompletionListener{
-        override fun onCompletion(mp: MediaPlayer?) {
-            player?.let {
-                if (!it.isLooping){
-                    binding.btPlay.setText(R.string.bt_play_play)
-                }
-            }
-        }
-    }
-
-    private inner class LoopSwitchChangedListener : CompoundButton.OnCheckedChangeListener{
-        override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
-            player?.isLooping = isChecked
-        }
-    }
-
-    fun onPlayButtonClick(){
+    private fun onPlayButtonClick(){
         binding.btPlay.setOnClickListener{
             player?.let {
                 if (it.isPlaying) {
                     it.pause()
-                binding.btPlay.setText(R.string.bt_play_play)
+                    binding.btPlay.setText(R.string.bt_play_play)
                 } else {
                     it.start()
                     binding.btPlay.setText(R.string.bt_play_pause)
@@ -81,12 +72,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    fun onBackButtonClick(){
+    private fun onBackButtonClick(){
         binding.btBack.setOnClickListener{
             player?.seekTo(0)
         }
     }
-    fun onForwardButtonClick(){
+    private fun onForwardButtonClick(){
         binding.btForward.setOnClickListener{
             player?.let {
                 val duration = it.duration
@@ -94,6 +85,11 @@ class MainActivity : AppCompatActivity() {
                 if (!it.isPlaying)
                     it.start()
             }
+        }
+    }
+    private fun onLoopSwitch(){
+        binding.swLoop.setOnCheckedChangeListener{ buttonView: CompoundButton, isChecked: Boolean ->
+            player?.isLooping = isChecked
         }
     }
 
@@ -106,6 +102,6 @@ class MainActivity : AppCompatActivity() {
             }
             it.release()
             player = null
-            }
+        }
     }
 }
